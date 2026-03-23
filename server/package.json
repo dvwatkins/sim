@@ -1,0 +1,14 @@
+{
+  "name": "obld500-sim-server",
+  "version": "1.0.0",
+  "description": "OBLD 500 Leadership Simulation Suite - API proxy",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "express": "^4.18.0"
+  }
+}
