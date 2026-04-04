@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
@@ -7,11 +8,30 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '1mb' }));
 
+// General rate limit: 100 requests per 15 minutes per IP
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait before trying again.' },
+});
+app.use(generalLimiter);
+
+// Strict rate limit for chat endpoint: 20 requests per 15 minutes per IP
+const chatLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please wait before sending another message.' },
+});
+
 // Serve static React build
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // API proxy - keeps Anthropic key server-side
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', chatLimiter, async (req, res) => {
   const { system, messages, max_tokens = 1000 } = req.body;
 
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -64,6 +84,11 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`OBLD 500 Simulation Suite running on port ${PORT}`);
-});
+// Only start listening when run directly (not when imported by tests)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`OBLD 500 Simulation Suite running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
