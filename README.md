@@ -18,8 +18,8 @@ sim-ldrcoach/
     src/
       App.jsx        Unified landing page + router
       suites/        4 suite components (27 simulations + 27 observations)
-  server/           Express API proxy
-    index.js         Proxies /api/chat to Anthropic (holds API key server-side)
+  server/           Express API proxy + persistence
+    index.js         Proxies /api/chat to Anthropic, persistence endpoints, rate limiting
   nginx/            Reverse proxy config for sim.ldrcoach.com
   setup.sh          Droplet provisioning script
 ```
@@ -99,6 +99,37 @@ cd /opt/obld500-sim/client
 npm run build
 # No server restart needed (static files)
 ```
+
+## Security
+
+- **Rate limiting** via `express-rate-limit` in the server:
+  - POST `/api/chat`: 20 requests / 15 min
+  - General routes: 100 requests / 15 min
+
+## Testing
+
+- **Framework:** Jest + supertest (32 tests)
+- **Run:** `cd server && npm test`
+- **Mocking:** Tests mock the Anthropic API client and `pg` pool. No live services required.
+
+## CI/CD
+
+- **GitHub Actions:** `.github/workflows/ci.yml` runs the server Jest tests on push/PR to `main`.
+
+## Persistence (PostgreSQL)
+
+Session data is optionally stored in PostgreSQL. Requires `DATABASE_URL` env var. If not set, the server returns 503 for persistence endpoints -- existing `/api/chat` still works without a database.
+
+**Tables:**
+- `sim_sessions` -- session metadata (student, scenario, timestamps)
+- `sim_scores` -- 6-dimension rubric scores per session
+- `sim_transcripts` -- full conversation transcripts
+
+**Endpoints:**
+- `POST /api/sessions` -- create a new session
+- `POST /api/sessions/:id/scores` -- save rubric scores
+- `POST /api/sessions/:id/transcript` -- save conversation transcript
+- `GET /api/students/:id/history` -- retrieve student session history
 
 ## API Costs
 
