@@ -11,7 +11,8 @@
   "dependencies": {
     "dotenv": "^16.4.0",
     "express": "^4.18.0",
-    "express-rate-limit": "^8.3.2"
+    "express-rate-limit": "^8.3.2",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "jest": "^30.3.0",
@@ -19,6 +20,8 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "setupFiles": ["./tests/setup.js"]
+    "setupFiles": [
+      "./tests/setup.js"
+    ]
   }
 }
